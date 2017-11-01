@@ -1,0 +1,335 @@
+##Add Bridge_hotspot
+/interface bridge
+add comment="bridge hotspot for wlan1" name=bridge_hotspot
+##WLAN1 with SSID
+/interface wireless
+set [ find default-name=wlan1 ] band=2ghz-b/g/n channel-width=20/40mhz-Ce \
+    disabled=no distance=indoors default-forwarding=no frequency=auto mode=ap-bridge ssid=#SSID tx-power-mode=all-rates-fixed wireless-protocol=\
+    802.11
+/interface wireless security-profiles
+add authentication-types=wpa2-psk eap-methods="" management-protection=\
+    allowed mode=dynamic-keys name=admin_profile supplicant-identity="" \
+    wpa2-pre-shared-key="w1nadm1n\$"
+/interface wireless
+set [ find default-name=wlan2 ] band=5ghz-a/n/ac channel-width=\
+    20/40/80mhz-Ceee disabled=no distance=indoors frequency=auto hide-ssid=\
+    yes mode=ap-bridge security-profile=admin_profile ssid=WSTech \
+    wireless-protocol=802.11
+####
+/interface wireless nstreme
+set wlan1 enable-polling=no
+##neighbor discovery
+/ip neighbor discovery
+set ether1 discover=no
+##DNS
+/ip dns
+set allow-remote-requests=yes servers=8.8.8.8,8.8.4.4
+##Add bridge port for WLAN1
+/interface bridge port
+set [find interface=wlan1] bridge=bridge_hotspot comment="hotpost bridge port for wlan1" interface=wlan1
+##bridge filter isolate traffic inside wlan
+/interface bridge filter
+add action=drop chain=forward comment="isolate traffic inside wlan" \
+    in-bridge=bridge_hotspot out-bridge=bridge_hotspot
+##Add addresses for hotpost
+/ip address
+add address=10.1.1.1/24 comment="Address for bridge hotspot" interface=bridge_hotspot \
+    network=10.1.1.0
+##Hotspopt Pool range
+/ip pool
+add name=hs-pool-10 ranges=10.1.1.2-10.1.1.254
+##dhcp-server for bridge_hotspot
+/ip dhcp-server
+add address-pool=hs-pool-10 disabled=no interface=bridge_hotspot lease-time=#DHCP_LEASEm name=dhcp_hotspot
+/ip dhcp-server network
+add address=10.1.1.0/24 comment="hotspot network" dns-server=\
+    10.1.1.1,8.8.8.8,8.8.4.4 domain=winfospot.com gateway=10.1.1.1
+##TODO
+#Add import of certificates
+##Enable ssl service
+#/certificate import passphrase=""
+#{
+#:delay delay-time=3;
+#:if ([/certificate print count-only] < 3) do={ :delay delay-time=5;}
+#}
+/ip service
+set api disabled=yes
+set api-ssl disabled=yes
+####
+##Firewall filter settings
+{
+:local i [/ip firewall filter find]; :tostr $i; :set $i [:pick $i 1 ([:len $i])];
+/ip firewall filter remove numbers=$i;
+}
+/ip firewall filter
+add action=drop chain=input comment="Block admin page ping" in-interface=\
+    bridge protocol=icmp
+add action=drop chain=forward comment="Bridge block ICMP (ping)" \
+    in-interface=bridge protocol=icmp
+add action=drop chain=forward comment="Bridge_Hotspot block ICMP (ping)" \
+    in-interface=bridge_hotspot protocol=icmp
+add action=drop chain=input comment="Drop IGMP" in-interface=bridge_hotspot \
+    protocol=igmp
+add action=passthrough chain=unused-hs-chain comment=\
+    "place hotspot rules here" disabled=yes
+add action=accept chain=input comment=\
+    "defconf: accept established,related,untracked" connection-state=\
+    established,related,untracked
+add action=drop chain=input comment="defconf: drop invalid" connection-state=\
+    invalid
+add action=accept chain=input comment="defconf: accept ICMP" protocol=icmp
+add action=drop chain=input comment="defconf: drop all not coming from LAN" \
+    in-interface-list=!LAN
+add action=accept chain=forward comment="defconf: accept in ipsec policy" \
+    ipsec-policy=in,ipsec
+add action=accept chain=forward comment="defconf: accept out ipsec policy" \
+    ipsec-policy=out,ipsec
+add action=fasttrack-connection chain=forward comment="defconf: fasttrack" \
+    connection-state=established,related
+add action=accept chain=forward comment=\
+    "defconf: accept established,related, untracked" connection-state=\
+    established,related,untracked
+add action=drop chain=forward comment="defconf: drop invalid" \
+    connection-state=invalid
+add action=drop chain=forward comment=\
+    "defconf:  drop all from WAN not DSTNATed" connection-nat-state=!dstnat \
+    connection-state=new in-interface-list=WAN
+add action=drop chain=hs-input comment=\
+    "Block HotSpot users to ping admin page" disabled=yes in-interface=\
+    bridge_hotspot
+####
+####Hotspont server configuration
+/ip hotspot user profile
+set [ find default=yes ] add-mac-cookie=no
+add add-mac-cookie=no idle-timeout=5m keepalive-timeout=5m \
+    !mac-cookie-timeout name=hs_user_profile rate-limit=1m/1m \
+    status-autorefresh=10m
+/ip hotspot profile
+set [ find default=yes ] html-directory=flash/hotspot login-by=\
+    trial \
+    trial-uptime-limit=20s trial-uptime-reset=1s
+/ip hotspot profile
+add hotspot-address=10.1.1.1 html-directory=flash/hotspot login-by=\
+    trial name=hs_profile \
+    trial-uptime-limit=5m trial-uptime-reset=2s trial-user-profile=\
+    hs_user_profile
+/ip hotspot
+add address-pool=hs-pool-10 addresses-per-mac=1 disabled=no idle-timeout=4m \
+    interface=bridge_hotspot name=hotspot1 profile=hs_profile
+/ip hotspot user
+add name=admin profile=hs_user_profile
+####
+##Walled Garden for Kyivstar
+/ip hotspot walled-garden
+add comment="place hotspot rules here" disabled=yes
+add dst-host=*kyivstar*
+add disabled=yes dst-host=*gstatic.com
+add dst-host=*analytics*
+add dst-host=android.clients.google.com
+add dst-host=*l.google.com
+add dst-host=*esputnik*
+add dst-host=*play.googleapis.com
+add dst-host=*ggpht.com
+add comment="Google Play Store download server" dst-host=*gvt1.com*
+add dst-host=gw.symcb.com
+add dst-host=*googleapis.com
+add dst-host=*googleusercontent.com
+add dst-host=*creativecdn*
+add dst-host=*myaccount.google*
+add dst-host=*accounts.google.com
+add dst-host=ssl.gstatic.com
+add dst-host=www.google.com
+add disabled=yes dst-host=192.168.88.247
+add dst-host=play.google.com
+add action=deny dst-host=*youtube*
+#addWGSite#
+##
+/ip hotspot walled-garden ip
+add action=accept comment=play.google.com disabled=yes !dst-address \
+    !dst-address-list dst-host=play.google.com !dst-port !protocol \
+    !src-address !src-address-list
+add action=accept comment=google-analytics.com disabled=no !dst-address \
+    !dst-address-list dst-host=google-analytics.com !dst-port !protocol \
+    !src-address !src-address-list
+add action=accept comment=www.googleapis.com disabled=yes !dst-address \
+    !dst-address-list dst-host=www.googleapis.com !dst-port !protocol \
+    !src-address !src-address-list
+add action=accept comment=service.winfospot.com disabled=no !dst-address \
+    !dst-address-list dst-host=service.winfospot.com !dst-port !protocol \
+    !src-address !src-address-list
+add action=reject comment=captive.apple.com disabled=yes !dst-address \
+    !dst-address-list dst-host=captive.apple.com !dst-port !protocol \
+    !src-address !src-address-list
+add action=accept comment=winfospot.com disabled=no !dst-address \
+    !dst-address-list dst-host=winfospot.com !dst-port !protocol !src-address \
+    !src-address-list
+#addWGIP#
+####
+##Firewall nat settings
+/ip firewall nat
+add action=passthrough chain=unused-hs-chain comment=\
+    "place hotspot rules here" disabled=yes
+add action=masquerade chain=srcnat comment="defconf: masquerade" \
+    ipsec-policy=out,none out-interface-list=WAN
+add action=masquerade chain=srcnat comment="masquerade hotspot network" \
+    src-address=10.1.1.0/24
+####
+##Clock
+/system clock
+set time-zone-name=Europe/Kiev
+/system ntp client
+set enabled=yes primary-ntp=91.210.190.13 secondary-ntp=195.78.244.50
+####
+##Scripts and scheduling
+/system scheduler
+add comment="send Disconnected MACs to Server" interval=10m name=\
+    sch_sendDisconnectedMACstoServer on-event=sendDisconnectedMACstoServer \
+    policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon \
+    start-time=startup
+/system script
+add name=sendDisconnectedMACstoServer owner=admin policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="{\
+    \_\r\
+    \n# Variables here\r\
+    \n:global timeFrom;\r\
+    \n#UMAC = mac address of wlan1 or Manually Setted value \r\
+    \n:global UMAC;\r\
+    \n# Indicate server address\r\
+    \n:global mainServerDomain \"winfospot.com\";\r\
+    \n#\r\
+    \n:local serverAddress \"https://service.winfospot.com/\";\r\
+    \n:local dataArray [:toarray \"\"];\r\
+    \n:local timeNow [/system clock get time];\r\
+    \n:local isTrue true;\r\
+    \n:local nowTmp;\r\
+    \n:local fromTmp;\r\
+    \n#Add server address to Walled Garden IP list if it is not added\r\
+    \n:if ( [:len \$mainServerDomain] > 0) do={\r\
+    \n\t:local ruleId [/ip hotspot walled-garden ip find dst-host=\$mainServer\
+    Domain];\r\
+    \n\t\tif ( [:len \$ruleId] = 0) do={\r\
+    \n\t\t\t/ip hotspot walled-garden ip add action=accept disabled=no dst-hos\
+    t=\$mainServerDomain comment=\"Main server - Winfospot\";\r\
+    \n\t\t} else={\r\
+    \n\t\t\t/ip hotspot walled-garden ip set disabled=no numbers=\$ruleId;\r\
+    \n\t\t};\r\
+    \n};\r\
+    \n#set value for global variable UMAC\r\
+    \n:if ( [:len \$UMAC] = 0 ) do={\r\
+    \n\t:local wlan [/interface wireless print as-value  where name=\"wlan1\"]\
+    ;\r\
+    \n\t:set \$wlan [:tostr \$wlan];\r\
+    \n\t:set \$UMAC ([:pick \$wlan ([:find \$wlan \"mac-address\"] +12 ) ([:fi\
+    nd \$wlan \"mac-address\"] + 29)]);\r\
+    \n}\r\
+    \n#set value for global variable timeFrom. If it is a first run, set curen\
+    t time - 5min\r\
+    \n:if (\$timeFrom >= 23:50:00) do={\r\
+    \n\t:set \$timeFrom 00:00:00;\r\
+    \n}\r\
+    \n:if ([:len \$timeFrom] = 0 ) do={ \r\
+    \n\t\t:global timeFrom ([/system clock get time] - 300);\r\
+    \n\t};\r\
+    \n#get data from logs (only wireless,info last 10 minutes) and fill array\
+    \r\
+    \n\t:foreach item in=[ /log print as-value where topics=wireless,info && m\
+    essage~\"disconnected, received disassoc\" && time>=(\$timeFrom - 600)] do\
+    ={\r\
+    \n\t\t:if (\$isTrue) do={\r\
+    \n\t\t\t:set \$nowTmp \$timeNow;\r\
+    \n\t\t\t:set \$fromTmp \$timeFrom;\r\
+    \n\t\t\t:set \$timeFrom \$timeNow;\r\
+    \n\t\t\t:set \$isTrue false;\r\
+    \n\t\t};\r\
+    \n\t\t:local tmpStr [:tostr \$item];\r\
+    \n\t\t:local mMac [:pick \$tmpStr ([:find \$tmpStr \"@\"]-17) ([:find \$tm\
+    pStr \"@\"])];\r\
+    \n\t\t:local logTime [:pick \$tmpStr ([:find \$tmpStr \"time=\"] + 5) ([:f\
+    ind \$tmpStr \"time=\"] + 13)]; \r\
+    \n#:put \$logTime;\r\
+    \n#:set \$logTime [:totime \$logTime ];\r\
+    \n#check if log time belong to todays logs and have an appropriate format \
+    (00:00:00)\r\
+    \n#\t\t:if ([:tostr [:typeof \$logTime]] = \"time\") do={\r\
+    \n#\t\t\t\r\
+    \n\t\t\t:local deltaTime ([/system clock get time] - \$logTime);\r\
+    \n#fill data array\r\
+    \n#:put \"Start Fill Array\";\r\
+    \n\t\t\t:if (\$logTime > \$fromTmp && \$logTime < \$nowTmp) do={\r\
+    \n#:set \$dataArray (\$dataArray, \"\\\"mac\\\":\\\"\$mMac\\\",\\\"utime\\\
+    \":\\\"\$logTime\\\",\\\"delta\\\":\\\"\$deltaTime\\\",\\\"umac\\\":\\\"\$\
+    UMAC\\\",\\\"cmd\\\":\\\"disconnect\\\"\");\r\
+    \n\t\t\t\t:set \$dataArray (\$dataArray, \"\\\"mac\\\":\\\"\$mMac\\\",\\\"\
+    utime\\\":\\\"\$logTime\\\",\\\"delta\\\":\\\"\$deltaTime\\\",\\\"umac\\\"\
+    :\\\"\$UMAC\\\",\\\"cmd\\\":\\\"disconnect\\\"\");\r\
+    \n\t\t\t};\r\
+    \n#\t\t};\r\
+    \n\t};\r\
+    \n#:put \"End Fill Array\";\r\
+    \n\t:local postData;\r\
+    \n\t:local counter 0;\r\
+    \n\t:if (([:len \$dataArray]) >= 1) do={\r\
+    \n\t#:set \$counter [:len \$dataArray];\r\
+    \n\t\t:foreach arrItem in=[\$dataArray] do={\r\
+    \n\t\t\t:if (\$counter <= [:len \$dataArray]) do={\r\
+    \n\t\t\t\t:set postData (\$postData . \"\\\"\$counter\\\":\". \"{\$arrItem\
+    }\" . \",\" );\r\
+    \n\t\t\t\t};\r\
+    \n\t\t\t:set counter (\$counter+1);\r\
+    \n\t\t};\r\
+    \n\t};\r\
+    \n\t:if ([:len \$postData;] > 1) do={\r\
+    \n#:put \"logTime  \$fromTmp \$nowTmp\"; \r\
+    \n\t\t:set \$postData [:pick \$postData 0 ([:len \$postData]-1)]\r\
+    \n\t\t:set \$postData \"{\$postData}\";\r\
+    \n:put \$postData;\r\
+    \n\t\t/tool fetch mode=https url=\"\$serverAddress\"  http-method=post  ht\
+    tp-data=\"data=\$postData\" keep-result=no\r\
+    \n\t};\r\
+    \n}"
+add name=getTrialUptime owner=admin policy=\
+    ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon source="{\
+    \r\
+    \n#TRIALUPTIME in seconds\r\
+    \n:global TRIALUPTIME;\r\
+    \n:global UMAC;\r\
+    \n:global fileTrialTime \"flash/trialUpTime\";\r\
+    \n:local cmd \"get_trial_timeout\";\r\
+    \n#set current value for global TRIALUPTIME in seconds\r\
+    \nlocal curretTrialTime [/ip hotspot profile get hsprof1 trial-uptime-limi\
+    t];\r\
+    \n{\r\
+    \n\t# convert hours to seconds, add to sum\r\
+    \n\t:local sum ( \$sum + ( [ :pick \$curretTrialTime 0 2 ] * 60 * 60 ));\r\
+    \n\t# convert minutes to seconds, add to sum\r\
+    \n\t:set sum ( \$sum + ( [ :pick \$curretTrialTime 3 5 ] * 60 ));\r\
+    \n\t# add seconds to sum\r\
+    \n\t:set sum ( \$sum + [ :pick \$curretTrialTime 6 8 ] );\r\
+    \n\t:set \$TRIALUPTIME \$sum;\r\
+    \n\t:set \$curretTrialTime \$sum;\r\
+    \n};\r\
+    \n#SERVERADDRESS\r\
+    \n:local SERVERADDRESS \"http://service.winfospot.com:88/command/\";\r\
+    \n#set value for global variable UMAC\r\
+    \n:if ( [:len \$UMAC] = 0 ) do={\r\
+    \n\t:local wlan [/interface wireless print as-value where name=\"wlan1\"];\
+    \r\
+    \n\t:set \$wlan [:tostr \$wlan];\r\
+    \n\t:set \$UMAC ([:pick \$wlan ([:find \$wlan \"mac-address\"] +12 ) ([:fi\
+    nd \$wlan \"mac-address\"] + 29)]);\r\
+    \n};\r\
+    \n#post data from main server\r\
+    \n/tool fetch mode=http url=\"\$SERVERADDRESS\" http-method=post http-data\
+    =\"umac=\$UMAC&cmd=\$cmd\" keep-result=yes dst-path=\$fileTrialTime;\r\
+    \n#set new value for Trial Up Time if it is different\r\
+    \n:local trialUpTimeTmp ([file get \$fileTrialTime contents]*60); \r\
+    \n#:put \"trialUpTimeTmp = \$trialUpTimeTmp , TRIALUPTIME = \$TRIALUPTIME \
+    , curretTrialTime = \$curretTrialTime\";\r\
+    \n\tif (\$trialUpTimeTmp != \$TRIALUPTIME && \$trialUpTimeTmp != \$curretT\
+    rialTime) do={\r\
+    \n\t\t:set TRIALUPTIME \$trialUpTimeTmp;\r\
+    \n\t\t#Set Trial UP Time in  seconds\r\
+    \n\t\t/ip hotspot profile set hsprof1 trial-uptime-limit=(\$TRIALUPTIME)\r\
+    \n#:put \$trialUpTimeTmp;\r\
+    \n\t};\r\
+    \n}"

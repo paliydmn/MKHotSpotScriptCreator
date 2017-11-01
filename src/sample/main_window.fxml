@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="350.0" minWidth="390.0" prefHeight="475.0" prefWidth="390.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Controller">
+   <children>
+      <VBox prefHeight="168.0" prefWidth="382.0">
+         <children>
+            <Label text="WLAN SSID">
+               <VBox.margin>
+                  <Insets bottom="2.0" left="10.0" />
+               </VBox.margin>
+            </Label>
+            <TextField fx:id="tfWlanSSID" onKeyReleased="#onSSIDchanged" prefHeight="25.0" prefWidth="360.0" promptText="WInfo" text="WInfo" AnchorPane.rightAnchor="10.0">
+               <VBox.margin>
+                  <Insets bottom="10.0" left="10.0" right="10.0" />
+               </VBox.margin>
+            </TextField>
+            <Label fx:id="lbPasswd" disable="true" layoutX="10.0" layoutY="117.0" text="WLAN Password">
+               <VBox.margin>
+                  <Insets bottom="2.0" left="10.0" />
+               </VBox.margin>
+            </Label>
+            <PasswordField fx:id="pfWlanPasswd" disable="true" prefHeight="25.0" prefWidth="360.0" promptText="Password" AnchorPane.rightAnchor="0.0">
+               <VBox.margin>
+                  <Insets bottom="10.0" left="10.0" right="10.0" />
+               </VBox.margin>
+            </PasswordField>
+            <Label fx:id="lbConfirmPasswd" disable="true" text="Confirm WLAN Password">
+               <VBox.margin>
+                  <Insets bottom="2.0" left="10.0" />
+               </VBox.margin>
+            </Label>
+            <PasswordField fx:id="pfWlanPasswdConfirm" disable="true" prefHeight="25.0" prefWidth="360.0" promptText="Confirm password" AnchorPane.rightAnchor="20.0">
+               <VBox.margin>
+                  <Insets bottom="10.0" left="10.0" right="10.0" />
+               </VBox.margin>
+            </PasswordField>
+            <Label layoutX="10.0" layoutY="10.0" prefHeight="17.0" prefWidth="229.0" text="DHCP Lease time for HotSpot">
+               <VBox.margin>
+                  <Insets bottom="2.0" left="10.0" />
+               </VBox.margin>
+            </Label>
+            <HBox>
+               <children>
+                  <TextField fx:id="tfDHCPLease" layoutX="10.0" layoutY="10.0" prefHeight="25.0" prefWidth="230.0" promptText="10" HBox.hgrow="ALWAYS">
+                     <VBox.margin>
+                        <Insets bottom="10.0" left="10.0" right="10.0" />
+                     </VBox.margin>
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                     <HBox.margin>
+                        <Insets left="10.0" right="10.0" />
+                     </HBox.margin>
+                  </TextField>
+                  <ChoiceBox fx:id="chBoxDHCP" prefHeight="25.0" prefWidth="30.0" HBox.hgrow="ALWAYS">
+                     <HBox.margin>
+                        <Insets right="10.0" />
+                     </HBox.margin>
+                  </ChoiceBox>
+               </children>
+            </HBox>
+         </children>
+         <VBox.margin>
+            <Insets top="10.0" />
+         </VBox.margin>
+      </VBox>
+      <AnchorPane prefHeight="216.0" prefWidth="380.0" VBox.vgrow="ALWAYS">
+         <children>
+            <Label prefHeight="17.0" prefWidth="360.0" text="White list of domains for HotSpot">
+               <padding>
+                  <Insets left="10.0" />
+               </padding>
+            </Label>
+            <TableView fx:id="tbvMainTable" editable="true" layoutY="23.0" minHeight="100.0" minWidth="360.0" prefHeight="111.0" prefWidth="360.0" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="23.0">
+              <columns>
+                <TableColumn fx:id="columnSite" minWidth="-1.0" prefWidth="223.0" text="Site" />
+                <TableColumn fx:id="columnIpRange" prefWidth="131.0" text="IP Range" />
+              </columns>
+               <opaqueInsets>
+                  <Insets />
+               </opaqueInsets>
+            </TableView>
+         </children>
+         <opaqueInsets>
+            <Insets />
+         </opaqueInsets>
+      </AnchorPane>
+      <AnchorPane prefHeight="45.0" prefWidth="380.0">
+         <children>
+            <HBox prefHeight="25.0" prefWidth="380.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+               <children>
+                  <TextField fx:id="tfWhiteSite" prefHeight="25.0" prefWidth="130.0" promptText="Allowed site" HBox.hgrow="ALWAYS">
+                     <HBox.margin>
+                        <Insets left="10.0" right="10.0" />
+                     </HBox.margin>
+                  </TextField>
+                  <CheckBox fx:id="chbIsIPrange" mnemonicParsing="false" prefHeight="17.0" prefWidth="55.0" text="Range">
+                     <HBox.margin>
+                        <Insets right="10.0" top="3.0" />
+                     </HBox.margin>
+                  </CheckBox>
+                  <Button fx:id="btAdd" alignment="CENTER" mnemonicParsing="false" onAction="#addSite" text="Add">
+                     <HBox.margin>
+                        <Insets right="10.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button fx:id="btEdit" alignment="CENTER" layoutX="329.0" layoutY="20.0" mnemonicParsing="false" onAction="#editSite" text="Edit">
+                     <HBox.margin>
+                        <Insets right="10.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button fx:id="btDelete" alignment="CENTER" mnemonicParsing="false" onAction="#deleteSite" text="Delete">
+                     <HBox.margin>
+                        <Insets right="10.0" />
+                     </HBox.margin>
+                  </Button>
+               </children>
+               <padding>
+                  <Insets top="10.0" />
+               </padding>
+            </HBox>
+         </children>
+      </AnchorPane>
+      <AnchorPane layoutX="15.0" layoutY="370.0" prefHeight="29.0" prefWidth="380.0">
+         <children>
+            <HBox layoutY="13.0" prefHeight="35.0" prefWidth="380.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+               <children>
+                  <Label fx:id="lbl_siteCount" prefHeight="17.0" prefWidth="205.0" text="Added sites: " HBox.hgrow="ALWAYS">
+                     <padding>
+                        <Insets left="10.0" />
+                     </padding>
+                     <HBox.margin>
+                        <Insets top="5.0" />
+                     </HBox.margin>
+                  </Label>
+                  <AnchorPane prefHeight="136.0" prefWidth="40.0" HBox.hgrow="ALWAYS">
+                     <children>
+                        <FlowPane alignment="CENTER_RIGHT" prefHeight="35.0" prefWidth="163.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <Button alignment="CENTER" mnemonicParsing="false" onAction="#generateScript" prefHeight="25.0" prefWidth="144.0" text="Generate" />
+                           </children>
+                           <opaqueInsets>
+                              <Insets />
+                           </opaqueInsets>
+                           <padding>
+                              <Insets right="10.0" />
+                           </padding>
+                        </FlowPane>
+                     </children>
+                  </AnchorPane>
+               </children>
+            </HBox>
+         </children>
+      </AnchorPane>
+   </children>
+   <opaqueInsets>
+      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+   </opaqueInsets>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" />
+   </padding>
+</VBox>
