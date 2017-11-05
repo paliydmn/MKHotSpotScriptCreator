@@ -29,8 +29,8 @@ public class Main extends Application {
         primaryStage.setTitle("MKHotSpotScriptCreator");
         primaryStage.setScene(mScene);
         primaryStage.show();
+
+        Controller.setStage(primaryStage);
     }
-
-
 
 }

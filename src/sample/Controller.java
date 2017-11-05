@@ -8,6 +8,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyEvent;
+import javafx.stage.Stage;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -160,4 +161,20 @@ public class Controller {
         }
         textFields.put(TextFieldsEnum.DHCP_LEASE,dhcpLease);
     }
+
+    public void onUpload(ActionEvent actionEvent) {
+
+    //myStage.sizeToScene();
+       // myStage.setMinHeight(600);
+        FTPConnectAndLogin.upload();
+    }
+
+
+    static Stage myStage;
+
+    public static void setStage(Stage stage){
+        myStage = stage;
+    }
+
+
 }
