@@ -9,7 +9,7 @@ set [ find default-name=wlan1 ] band=2ghz-b/g/n channel-width=20/40mhz-Ce \
 /interface wireless security-profiles
 add authentication-types=wpa2-psk eap-methods="" management-protection=\
     allowed mode=dynamic-keys name=admin_profile supplicant-identity="" \
-    wpa2-pre-shared-key="w1nadm1n\$"
+    wpa2-pre-shared-key="passwd"
 /interface wireless
 set [ find default-name=wlan2 ] band=5ghz-a/n/ac channel-width=\
     20/40/80mhz-Ceee disabled=no distance=indoors frequency=auto hide-ssid=\
@@ -43,7 +43,7 @@ add name=hs-pool-10 ranges=10.1.1.2-10.1.1.254
 add address-pool=hs-pool-10 disabled=no interface=bridge_hotspot lease-time=#DHCP_LEASEm name=dhcp_hotspot
 /ip dhcp-server network
 add address=10.1.1.0/24 comment="hotspot network" dns-server=\
-    10.1.1.1,8.8.8.8,8.8.4.4 domain=winfospot.com gateway=10.1.1.1
+    10.1.1.1,8.8.8.8,8.8.4.4 domain=domain.com gateway=10.1.1.1
 ##TODO
 #Add import of certificates
 ##Enable ssl service
@@ -119,10 +119,9 @@ add address-pool=hs-pool-10 addresses-per-mac=1 disabled=no idle-timeout=4m \
 /ip hotspot user
 add name=admin profile=hs_user_profile
 ####
-##Walled Garden for Kyivstar
+##Walled Garden for 
 /ip hotspot walled-garden
 add comment="place hotspot rules here" disabled=yes
-add dst-host=*kyivstar*
 add disabled=yes dst-host=*gstatic.com
 add dst-host=*analytics*
 add dst-host=android.clients.google.com
@@ -154,14 +153,14 @@ add action=accept comment=google-analytics.com disabled=no !dst-address \
 add action=accept comment=www.googleapis.com disabled=yes !dst-address \
     !dst-address-list dst-host=www.googleapis.com !dst-port !protocol \
     !src-address !src-address-list
-add action=accept comment=service.winfospot.com disabled=no !dst-address \
-    !dst-address-list dst-host=service.winfospot.com !dst-port !protocol \
+add action=accept comment=service.domain.com disabled=no !dst-address \
+    !dst-address-list dst-host=service.domain.com !dst-port !protocol \
     !src-address !src-address-list
 add action=reject comment=captive.apple.com disabled=yes !dst-address \
     !dst-address-list dst-host=captive.apple.com !dst-port !protocol \
     !src-address !src-address-list
-add action=accept comment=winfospot.com disabled=no !dst-address \
-    !dst-address-list dst-host=winfospot.com !dst-port !protocol !src-address \
+add action=accept comment=domain.com disabled=no !dst-address \
+    !dst-address-list dst-host=domain.com !dst-port !protocol !src-address \
     !src-address-list
 #addWGIP#
 ####
@@ -195,9 +194,9 @@ add name=sendDisconnectedMACstoServer owner=admin policy=\
     \n#UMAC = mac address of wlan1 or Manually Setted value \r\
     \n:global UMAC;\r\
     \n# Indicate server address\r\
-    \n:global mainServerDomain \"winfospot.com\";\r\
+    \n:global mainServerDomain \"domain.com\";\r\
     \n#\r\
-    \n:local serverAddress \"https://service.winfospot.com/\";\r\
+    \n:local serverAddress \"https://service.domain.com/\";\r\
     \n:local dataArray [:toarray \"\"];\r\
     \n:local timeNow [/system clock get time];\r\
     \n:local isTrue true;\r\
@@ -309,7 +308,7 @@ add name=getTrialUptime owner=admin policy=\
     \n\t:set \$curretTrialTime \$sum;\r\
     \n};\r\
     \n#SERVERADDRESS\r\
-    \n:local SERVERADDRESS \"http://service.winfospot.com:88/command/\";\r\
+    \n:local SERVERADDRESS \"http://service.domain.com:88/command/\";\r\
     \n#set value for global variable UMAC\r\
     \n:if ( [:len \$UMAC] = 0 ) do={\r\
     \n\t:local wlan [/interface wireless print as-value where name=\"wlan1\"];\
